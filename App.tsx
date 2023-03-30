@@ -1,27 +1,45 @@
 import { useState } from 'react';
 import { Button, FlatList, Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import FormData from 'form-data';
 
 export default function App() {
   const [mealName, setMealName] = useState<string>('Bang Bang Chicken')
   const [ingredients, setIngredients] = useState<Ingredient[]>([{'name': 'Chicken thigh', 'number': 600, 'quantity': 'grams'}, {'name': 'ginger', 'number': 4, 'quantity': 'slices'}, {'name': 'rice win', 'number': 1, 'quantity': 'tbsp'}, {'name': 'scallion', 'number': 2, 'quantity': 'stalk'}, {'name': 'Japanese cucumber', 'number': 1, 'quantity': ''}, {'name': 'sesame paste', 'number': 1, 'quantity': 'tbsp'}, {'name': 'soy sauce', 'number': 2, 'quantity': 'tbsp'}, {'name': 'black vinegar', 'number': 1, 'quantity': 'tbsp'}, {'name': 'chili oil', 'number': 2, 'quantity': 'tbsp'}, {'name': 'sugar', 'number': 1, 'quantity': 'tsp'}, {'name': 'red chili strips', 'number': 1, 'quantity': 'tbsp'}, {'name': 'white sesame', 'number': 1, 'quantity': 'tsp'}])
   const [nutrifacts, setNutrifacts] = useState<NutriFacts>()
-  const [ingredient, setIngredient] = useState<string>()
+  const [ingredient, setIngredient] = useState<string>('')
+  const [image, setImage] = useState<string>();
 
-  const getNutrifacts = (name: string): Ingredient => {
+  const pickImage = async () => {
+    // No permissions request is necessary for launching the image library
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+    console.log(result);
 
-    return {
-      name: name,
-      number: 10,
-      quantity: 'unit(s)'
+    if (!result.canceled) {
+      setImage(result.assets[0].uri);
     }
+  };
+
+  const getNutrifacts = () => {
+    console.log('Getting Nutrifacts')
   }
 
   const addIngredient = (text: string) => {
-    const data = getNutrifacts(text)
-
+    // const data = getNutrifacts()
+    const data = {
+      name: text,
+      number: 10,
+      quantity: 'unit(s)'
+    }
     setIngredients((prevState) => {
       return [...prevState, data]
     })
+    setIngredient('')
   }
 
   const removeIngredient = (ingredient: Ingredient) => {
@@ -43,7 +61,15 @@ export default function App() {
     <View style={styles.container}>
       <Text style={styles.header}>{mealName}</Text>
       <View style={styles.image}>
-        <Image source={require('./assets/bangchicken.jpeg')} style={{width: 250, height: 250}}/>
+        <Image source={{uri: image}} style={{width: 250, height: 250}}/>
+      </View>
+      <View style={{flexDirection: 'row'}}>
+        <Pressable style={styles.upload} onPress={pickImage}>
+          <Text>Pick an image from camera roll</Text>
+        </Pressable>
+        <Pressable style={{...styles.upload, backgroundColor: 'black'}} onPress={() => getNutrifacts()}>
+          <Text style={{color: 'white'}}>Get Nutrifacts</Text>
+        </Pressable>
       </View>
       <View style={styles.nutrition}>
         <View style={styles.ingredients}>
@@ -110,6 +136,12 @@ const styles = StyleSheet.create({
     margin: 25,
     alignItems: 'center',
     overflow: 'hidden'
+  },
+  upload: {
+    backgroundColor: 'lightgray',
+    borderRadius: 5,
+    padding: 12,
+    margin: 20,
   },
   nutrition: {
     flex: 1,
