@@ -1,36 +1,61 @@
 import { useState } from 'react';
-import { Button, FlatList, Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Button, FlatList, Image, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import FormData from 'form-data';
+import * as ImageManipulator from 'expo-image-manipulator';
 
 export default function App() {
-  const [mealName, setMealName] = useState<string>('Bang Bang Chicken')
+  const [mealName, setMealName] = useState<string>('Prediction')
   const [ingredients, setIngredients] = useState<Ingredient[]>([{'name': 'Chicken thigh', 'number': 600, 'quantity': 'grams'}, {'name': 'ginger', 'number': 4, 'quantity': 'slices'}, {'name': 'rice win', 'number': 1, 'quantity': 'tbsp'}, {'name': 'scallion', 'number': 2, 'quantity': 'stalk'}, {'name': 'Japanese cucumber', 'number': 1, 'quantity': ''}, {'name': 'sesame paste', 'number': 1, 'quantity': 'tbsp'}, {'name': 'soy sauce', 'number': 2, 'quantity': 'tbsp'}, {'name': 'black vinegar', 'number': 1, 'quantity': 'tbsp'}, {'name': 'chili oil', 'number': 2, 'quantity': 'tbsp'}, {'name': 'sugar', 'number': 1, 'quantity': 'tsp'}, {'name': 'red chili strips', 'number': 1, 'quantity': 'tbsp'}, {'name': 'white sesame', 'number': 1, 'quantity': 'tsp'}])
-  const [nutrifacts, setNutrifacts] = useState<NutriFacts>()
   const [ingredient, setIngredient] = useState<string>('')
-  const [image, setImage] = useState<string>();
+  const [image, setImage] = useState<string>()
+  const [predictionADA, setPredictionsADA] = useState<Prediction>()
+  const [predictionMLP, setPredictionsMLP] = useState<Prediction>()
+
+  const formatTitle = (title: string) => {
+    return title.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
+  }
 
   const pickImage = async () => {
-    // No permissions request is necessary for launching the image library
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
     });
+
     console.log(result);
 
     if (!result.canceled) {
-      setImage(result.assets[0].uri);
+      const resizedImage = await ImageManipulator.manipulateAsync(
+        result.assets[0].uri,
+        [{ resize: { width: 400} }],
+        { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
+      );
+
+      setImage(resizedImage.uri);
     }
   };
 
   const getNutrifacts = () => {
-    console.log('Getting Nutrifacts')
-  }
+    const base64Img = image
+    const URL = 'http://localhost:3000/predict'
+
+    fetch(URL, {
+      body: JSON.stringify({'file': base64Img}),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'appliciation/json',
+      },
+      method: 'POST',
+    }).then(res => res.json())
+      .then(data => {
+        setPredictionsADA({...data[0].ada, prediction: formatTitle(data[0].ada.prediction)})
+        setPredictionsMLP(data[0].mlp)
+      })
+      .catch(e => console.error(e))
+  };
 
   const addIngredient = (text: string) => {
-    // const data = getNutrifacts()
     const data = {
       name: text,
       number: 10,
@@ -48,18 +73,10 @@ export default function App() {
     })
   }
 
-  /*
-    NutriCapture Flow:
-      - Device takes photo
-      - Photo uploaded to python ML algorithm
-      - Output from algorithm sent to backend server (liDAR data from device)
-      - When server recieves data it processes output makes call to FoodAPI
-      - API nutrition facts, liDAR portion info, ingredient list and photo sent to react
-  */
-
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>{mealName}</Text>
+      { predictionADA && <Text style={styles.header}>ADA: {predictionADA.percentage}% {predictionADA.prediction}</Text> }
+      { predictionMLP && <Text style={styles.header}>MLP: {predictionMLP.percentage}% {predictionMLP.prediction}</Text>}
       <View style={styles.image}>
         <Image source={{uri: image}} style={{width: 250, height: 250}}/>
       </View>

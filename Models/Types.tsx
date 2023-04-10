@@ -12,3 +12,15 @@ type NutriFacts = {
     cholesterol: number,
     fiber: number,
 }
+
+type Prediction = {
+    percentage: number,
+    prediction: string,
+    raw_data: string[]
+}
+
+type PredictionData = {
+    filepath: string,
+    ada: Prediction,
+    mlp: Prediction
+}
