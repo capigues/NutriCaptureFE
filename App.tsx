@@ -5,7 +5,7 @@ import * as ImageManipulator from 'expo-image-manipulator';
 
 export default function App() {
   const [mealName, setMealName] = useState<string>('Prediction')
-  const [ingredients, setIngredients] = useState<Ingredient[]>([{'name': 'Chicken thigh', 'number': 600, 'quantity': 'grams'}, {'name': 'ginger', 'number': 4, 'quantity': 'slices'}, {'name': 'rice win', 'number': 1, 'quantity': 'tbsp'}, {'name': 'scallion', 'number': 2, 'quantity': 'stalk'}, {'name': 'Japanese cucumber', 'number': 1, 'quantity': ''}, {'name': 'sesame paste', 'number': 1, 'quantity': 'tbsp'}, {'name': 'soy sauce', 'number': 2, 'quantity': 'tbsp'}, {'name': 'black vinegar', 'number': 1, 'quantity': 'tbsp'}, {'name': 'chili oil', 'number': 2, 'quantity': 'tbsp'}, {'name': 'sugar', 'number': 1, 'quantity': 'tsp'}, {'name': 'red chili strips', 'number': 1, 'quantity': 'tbsp'}, {'name': 'white sesame', 'number': 1, 'quantity': 'tsp'}])
+  const [ingredients, setIngredients] = useState<Ingredient[]>([])
   const [ingredient, setIngredient] = useState<string>('')
   const [image, setImage] = useState<string>()
   const [predictionADA, setPredictionsADA] = useState<Prediction>()
@@ -23,15 +23,12 @@ export default function App() {
       quality: 1,
     });
 
-    console.log(result);
-
     if (!result.canceled) {
       const resizedImage = await ImageManipulator.manipulateAsync(
         result.assets[0].uri,
         [{ resize: { width: 400} }],
         { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
       );
-
       setImage(resizedImage.uri);
     }
   };
@@ -50,10 +47,21 @@ export default function App() {
     }).then(res => res.json())
       .then(data => {
         setPredictionsADA({...data[0].ada, prediction: formatTitle(data[0].ada.prediction)})
-        setPredictionsMLP(data[0].mlp)
+        setPredictionsMLP({...data[0].mlp, prediction: formatTitle(data[0].mlp.prediction)})
+        
+        getIngredients(data[0].mlp.prediction)
       })
       .catch(e => console.error(e))
   };
+
+  const getIngredients = async (ingredient: string) => {
+    const URL = 'http://localhost:3000/ingredients/' + ingredient
+
+    fetch(URL).then(res => res.json())
+      .then(data => {
+        setIngredients(data)
+      })
+  }
 
   const addIngredient = (text: string) => {
     const data = {
