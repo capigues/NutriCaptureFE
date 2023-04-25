@@ -16,24 +16,20 @@ export default function App() {
   }
 
   const pickImage = async () => {
-    try {
-      let result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.All,
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 1,
-      });
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
 
-      if (!result.canceled) {
-        const resizedImage = await ImageManipulator.manipulateAsync(
-          result.assets[0].uri,
-          [{ resize: { width: 400} }],
-          { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
-        );
-        setImage(resizedImage.uri);
-      }
-    } catch (e) {
-      console.error(e)
+    if (!result.canceled) {
+      const resizedImage = await ImageManipulator.manipulateAsync(
+        result.assets[0].uri,
+        [{ resize: { width: 400} }],
+        { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
+      );
+      setImage(resizedImage.uri);
     }
   };
 
@@ -59,16 +55,12 @@ export default function App() {
   };
 
   const getIngredients = async (ingredient: string) => {
-    try {
-      const URL = 'http://localhost:3000/ingredients/' + ingredient
-  
-      fetch(URL).then(res => res.json())
-        .then(data => {
-          setIngredients(data)
-        })
-    } catch (e) {
-      console.error(e)
-    }
+    const URL = 'http://localhost:3000/ingredients/' + ingredient
+
+    fetch(URL).then(res => res.json())
+      .then(data => {
+        setIngredients(data)
+      })
   }
 
   const addIngredient = (text: string) => {
