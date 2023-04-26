@@ -16,20 +16,24 @@ export default function App() {
   }
 
   const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.All,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
+    try {
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.All,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 1,
+      });
 
-    if (!result.canceled) {
-      const resizedImage = await ImageManipulator.manipulateAsync(
-        result.assets[0].uri,
-        [{ resize: { width: 400} }],
-        { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
-      );
-      setImage(resizedImage.uri);
+      if (!result.canceled) {
+        const resizedImage = await ImageManipulator.manipulateAsync(
+          result.assets[0].uri,
+          [{ resize: { width: 400} }],
+          { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
+        );
+        setImage(resizedImage.uri);
+      }
+    } catch (e) {
+      console.error(e)
     }
   };
 
@@ -37,30 +41,39 @@ export default function App() {
     const base64Img = image
     const URL = 'http://localhost:3000/predict'
 
-    fetch(URL, {
-      body: JSON.stringify({'file': base64Img}),
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'appliciation/json',
-      },
-      method: 'POST',
-    }).then(res => res.json())
-      .then(data => {
-        setPredictionsADA({...data[0].ada, prediction: formatTitle(data[0].ada.prediction)})
-        setPredictionsMLP({...data[0].mlp, prediction: formatTitle(data[0].mlp.prediction)})
-        
-        getIngredients(data[0].mlp.prediction)
+    try {
+      fetch(URL, {
+        body: JSON.stringify({'file': base64Img}),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'appliciation/json',
+        },
+        method: 'POST',
       })
-      .catch(e => console.error(e))
+        .then(res => res.json())
+        .then(data => {
+          setPredictionsADA({...data[0].ada, prediction: formatTitle(data[0].ada.prediction)})
+          setPredictionsMLP({...data[0].mlp, prediction: formatTitle(data[0].mlp.prediction)})
+          getIngredients(data[0].mlp.prediction)
+        })
+        .catch(e => console.error(e))
+    } catch (e) {
+      console.error(e)
+    }
   };
 
   const getIngredients = async (ingredient: string) => {
     const URL = 'http://localhost:3000/ingredients/' + ingredient
 
-    fetch(URL).then(res => res.json())
-      .then(data => {
-        setIngredients(data)
-      })
+    try {
+      fetch(URL)
+        .then(res => res.json())
+        .then(data => {
+          setIngredients(data)
+        })
+    } catch (e) {
+      console.error(e)
+    }
   }
 
   const addIngredient = (text: string) => {
